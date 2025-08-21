@@ -10,7 +10,7 @@ def main():
     p.add_argument("--model-dir", default="/opt/ml/model")
     p.add_argument("--output-data-dir", default="/opt/ml/output/data")
     # args = p.parse_args()
-    print("Train placeholder – will implement in Lab 4.")
+    print("Train placeholder. We will implement in Lab 4.")
 
 
 if __name__ == "__main__":
