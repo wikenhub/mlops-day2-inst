@@ -1,0 +1,17 @@
+# pyproject.toml
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+lint.select = ["E","F","I","B","UP","S","W"]  # PEP8/flake8, import rules, bugbear, pyupgrade, security basics
+lint.ignore = ["E203"]  # compatible with Black
+
+[tool.bandit]
+skips = ["B101"]  # example: allow assert in tests
