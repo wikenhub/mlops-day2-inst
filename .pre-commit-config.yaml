@@ -17,13 +17,14 @@ repos:
       - id: nbstripout
         files: \.ipynb$
 
-  # Linters/formatters (only run on Python files, not notebooks)
+  # Linters/formatters (Python only; Ruff owns import sorting with --fix)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.9
     hooks:
-      - id: ruff            # fast linter
+      - id: ruff
         types: [python]
-      - id: ruff-format     # formatter; runs after ruff (keeps code tidy)
+        args: ["--fix"]        # auto-fix (incl. import order I001)
+      - id: ruff-format
         types: [python]
 
   - repo: https://github.com/psf/black
@@ -32,20 +33,14 @@ repos:
       - id: black
         types: [python]
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        types: [python]
-
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.9
     hooks:
       - id: bandit
-        args: ["-q", "-ll", "--skip", "B101"]  # match pyproject.toml example
+        args: ["-q", "-ll", "--skip", "B101"]
         types: [python]
 
-  # Secrets scanning (skip .ipynb; nbstripout already removed outputs anyway)
+  # Secrets scanning (skip .ipynb; nbstripout removes outputs anyway)
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
