@@ -369,6 +369,36 @@ def write_report(report_dict: dict, out_rep: Path, filename: str = "report.json"
     (out_rep / filename).write_text(json.dumps(report_dict, indent=2))
 
 
+def write_schema_files(
+    out_art: Path,
+    feature_names_after_encoding: list[str],
+    raw_target_name: str,
+    label_name: str,
+    label_mapping: dict,
+) -> None:
+    """
+    Emit simple, human+machine friendly schema files next to preprocess.joblib.
+    - columns.json: exact column order in the emitted CSVs (f0..fN + label)
+    - schema.json: minimal metadata the trainer (and humans) can rely on
+    """
+    out_art.mkdir(parents=True, exist_ok=True)
+
+    # 1) Columns file matches the CSVs we emit: f0..fN + label
+    fcols = [f"f{i}" for i in range(len(feature_names_after_encoding))]
+    (out_art / "columns.json").write_text(json.dumps({"columns": fcols + [label_name]}, indent=2))
+
+    # 2) Minimal but useful schema for audits and downstream consumers
+    schema = {
+        "raw_target": raw_target_name,  # e.g., "Churn" in raw data
+        "label_column": label_name,  # "label" in our CSVs
+        "feature_count": len(feature_names_after_encoding),
+        "feature_names_after_encoding": feature_names_after_encoding,  # best effort
+        "label_mapping": label_mapping,  # e.g., {"No": 0, "Yes": 1}
+        "contract": "features are f0..fN (float), label is int {0,1}",
+    }
+    (out_art / "schema.json").write_text(json.dumps(schema, indent=2))
+
+
 def extract_features_and_label(df: pd.DataFrame, target: str):
     """
     Split the DataFrame into features X and binary label y (0/1).
@@ -438,7 +468,13 @@ def main():
     class_w = compute_class_weights(y_tr)
     feature_count = int(Xt_tr.shape[1])
 
-    # 7) Save splits (CSV) and artifacts (joblib bundle)
+    # 7) Recover human-readable feature names if the transformer provides them
+    try:
+        feat_names = list(preprocessor.get_feature_names_out())
+    except Exception:
+        feat_names = [f"f{i}" for i in range(feature_count)]
+
+    # 8) Save splits (CSV) and artifacts (joblib bundle)
     save_split(Xt_tr, y_tr, out_train / "train.csv")
     save_split(Xt_va, y_va, out_val / "val.csv")
     save_split(Xt_te, y_te, out_test / "test.csv")
@@ -452,7 +488,19 @@ def main():
         feature_count=feature_count,
     )
 
-    # 8) Finalize and write report.json
+    # 9) write explicit schema files the trainer can rely on
+    # We used extract_features_and_label() to map "Yes/No" → 1/0.
+    # Recreate that mapping for the report/schema (students can see it).
+    label_mapping = {"No": 0, "Yes": 1}
+    write_schema_files(
+        out_art=out_art,
+        feature_names_after_encoding=feat_names,
+        raw_target_name=args.target,  # e.g., "Churn" in raw data
+        label_name="label",  # standardized output label name
+        label_mapping=label_mapping,
+    )
+
+    # 10) Finalize and write report.json
     report.update(
         {
             "splits": {
@@ -472,7 +520,7 @@ def main():
     )
     write_report(report, out_rep)
 
-    # 9) Friendly console summary
+    # 11) Friendly console summary
     print("=== Processing complete ===")
     print(f"Train: {out_train / 'train.csv'}")
     print(f"Val:   {out_val / 'val.csv'}")

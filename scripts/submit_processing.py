@@ -79,14 +79,6 @@ outputs = [
 # --- 5) Kick off the job ---
 job_name = f"{LABP}-preprocess-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
 
-# Optional: attach the job to an Experiment/Trial for grouping
-# (you can comment this out if not using Experiments yet)
-experiment_config = {
-    "ExperimentName": f"{LABP}-churn-exp",
-    "TrialName": f"{LABP}-preprocess",
-    "TrialComponentDisplayName": "preprocess",
-}
-
 print(f"Submitting Processing job: {job_name}")
 processor.run(
     job_name=job_name,
@@ -105,6 +97,5 @@ processor.run(
     ],
     wait=True,  # stream logs until the job finishes
     logs=True,  # show CloudWatch logs in your terminal
-    experiment_config=experiment_config,
 )
 print("Processing job finished.")
