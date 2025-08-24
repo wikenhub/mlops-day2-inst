@@ -1,5 +1,6 @@
 # .pre-commit-config.yaml
 repos:
+  # Basic hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -9,35 +10,48 @@ repos:
       - id: check-yaml
       - id: check-added-large-files    # blocks very large binaries in Git
 
+  # Strip Jupyter outputs BEFORE any secret scan or lint runs
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+      - id: nbstripout
+        files: \.ipynb$
+
+  # Linters/formatters (only run on Python files, not notebooks)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.9
     hooks:
       - id: ruff            # fast linter
+        types: [python]
       - id: ruff-format     # formatter; runs after ruff (keeps code tidy)
+        types: [python]
 
   - repo: https://github.com/psf/black
     rev: 24.8.0
     hooks:
       - id: black
+        types: [python]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
+        types: [python]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.9
     hooks:
       - id: bandit
         args: ["-q", "-ll", "--skip", "B101"]  # match pyproject.toml example
+        types: [python]
 
+  # Secrets scanning (skip .ipynb; nbstripout already removed outputs anyway)
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-        args: ["--baseline", ".secrets.baseline"]
-
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.7.1
-    hooks:
-      - id: nbstripout
+        args:
+          - "--baseline"
+          - ".secrets.baseline"
+          - "--exclude-files"
+          - "\\.ipynb$"
