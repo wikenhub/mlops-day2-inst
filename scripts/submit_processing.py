@@ -10,11 +10,14 @@ from sagemaker.sklearn.processing import SKLearnProcessor
 
 # --- 1) Read environment (set in earlier labs) ---
 REGION = os.environ.get("AWS_REGION", "ap-northeast-2")
-BUCKET = os.environ["BUCKET"]  # e.g., stu01-<acct>-ap-northeast-2-mlops
-S3_DATA = os.environ["S3_DATA"]  # e.g., s3://.../data
-S3_ART = os.environ["S3_ARTIFACTS"]  # e.g., s3://.../artifacts
+BUCKET = os.environ["BUCKET"]  # e.g., stuxx-<acct>-ap-northeast-2-mlops
 ROLE = os.environ["SM_ROLE_ARN"]  # your per-student SageMaker role
 LABP = os.environ.get("LAB_PREFIX", "stuXX")
+
+S3_CODE = os.environ["S3_CODE"]
+S3_DATA_RAW = os.environ["S3_DATA_RAW"]
+S3_DATA_PROCESSED = os.environ["S3_DATA_PROCESSED"]
+S3_ART_PREPROCESS = os.environ["S3_ART_PREPROCESS"]
 
 # Optional: these control split behavior for the script
 TARGET = os.environ.get("TARGET_COL", "Churn")
@@ -42,45 +45,38 @@ processor = SKLearnProcessor(
 # S3 (left) will be mounted inside the container (right).
 # Our script defaults to these /opt/ml/processing/* locations.
 
-# Upload the whole code folder to YOUR bucket; returns an S3 URI
-src_s3 = sm_sess.upload_data(
-    path="sagemaker/code",  # folder with preprocess.py (and any helpers)
-    bucket=BUCKET,
-    key_prefix=f"{LABP}/code",  # e.g., stu29/code
-)
-
 inputs = [
     ProcessingInput(
-        source=f"{S3_DATA}/raw/telco/",
+        source=f"{os.environ['S3_DATA_RAW']}/telco/",
         destination="/opt/ml/processing/input",
     ),
 ]
 
 outputs = [
-    ProcessingOutput(  # train split CSV
+    ProcessingOutput(
         output_name="train",
         source="/opt/ml/processing/train",
-        destination=f"{S3_DATA}/processed/train/",
+        destination=f"{S3_DATA_PROCESSED}/train/",
     ),
-    ProcessingOutput(  # val split CSV
+    ProcessingOutput(
         output_name="val",
         source="/opt/ml/processing/val",
-        destination=f"{S3_DATA}/processed/val/",
+        destination=f"{S3_DATA_PROCESSED}/val/",
     ),
-    ProcessingOutput(  # test split CSV
+    ProcessingOutput(
         output_name="test",
         source="/opt/ml/processing/test",
-        destination=f"{S3_DATA}/processed/test/",
+        destination=f"{S3_DATA_PROCESSED}/test/",
     ),
-    ProcessingOutput(  # fitted transformers, metadata
+    ProcessingOutput(  # fitted transformers + schema/columns
         output_name="artifacts",
         source="/opt/ml/processing/artifacts",
-        destination=f"{S3_ART}/preprocess/",
+        destination=f"{S3_ART_PREPROCESS}/artifacts/",
     ),
-    ProcessingOutput(  # human-readable EDA report
+    ProcessingOutput(  # EDA report
         output_name="report",
         source="/opt/ml/processing/report",
-        destination=f"{S3_ART}/preprocess/",
+        destination=f"{S3_ART_PREPROCESS}/report/",
     ),
 ]
 
@@ -90,8 +86,7 @@ job_name = f"{LABP}-preprocess-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
 print(f"Submitting Processing job: {job_name}")
 processor.run(
     job_name=job_name,
-    code="preprocess.py",  # entrypoint filename (relative to source_dir)
-    source_dir=src_s3,  # <-- use S3 source, so no default-bucket staging
+    code=f"{S3_CODE.rstrip('/')}/preprocess.py",  # <-- S3 URI to the script
     inputs=inputs,
     outputs=outputs,
     arguments=[
@@ -104,7 +99,7 @@ processor.run(
         "--random-state",
         str(SEED),
     ],
-    wait=True,  # stream logs until the job finishes
-    logs=True,  # show CloudWatch logs in your terminal
+    wait=True,
+    logs=True,
 )
 print("Processing job finished.")
