@@ -1,4 +1,5 @@
 # scripts/submit_training.py
+import argparse
 import os
 from datetime import datetime
 
@@ -7,6 +8,25 @@ import boto3
 import sagemaker
 from sagemaker.inputs import TrainingInput
 from sagemaker.sklearn.estimator import SKLearn
+
+# 0) Helper function to parse the job submit parameters.
+# These parameters are parsed when we submit the job from our DevBox.
+# We wrap it in SKLearn estimator and pass it to SageMaker
+
+
+def parse_submit_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--target", default="Churn")
+    p.add_argument("--max-iter", type=int, default=200)
+    p.add_argument("-C", "--C", type=float, default=1.0)
+    p.add_argument("--penalty", default="l2", choices=["l2"])
+    p.add_argument("--solver", default="lbfgs", choices=["lbfgs", "liblinear", "saga"])
+    p.add_argument("--class-weights", default="auto", choices=["auto", "balanced", "none"])
+    p.add_argument("--random-state", type=int, default=42)
+    return p.parse_args()
+
+
+args = parse_submit_args()
 
 # 1) Env (from ~/mlops-env.sh)
 REGION = os.environ.get("AWS_REGION", "ap-northeast-2")
@@ -34,13 +54,13 @@ est = SKLearn(
     output_path=f"{S3_ARTIFACTS}/training/",
     code_location=f"{S3_ARTIFACTS}/code/",
     hyperparameters={
-        "target": "Churn",
-        "max-iter": 200,
-        "C": 1.0,
-        "penalty": "l2",
-        "solver": "lbfgs",
-        "class-weights": "auto",
-        "random-state": 42,
+        "target": args.target,
+        "max-iter": args.max_iter,
+        "C": args.C,
+        "penalty": args.penalty,
+        "solver": args.solver,
+        "class-weights": args.class_weights,
+        "random-state": args.random_state,
     },
 )
 
