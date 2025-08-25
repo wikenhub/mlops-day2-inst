@@ -2,7 +2,7 @@
 # Skeleton for a SageMaker Training entrypoint.
 # This script will:
 #   1) Read CSVs from training/validation/test channels
-#   2) Load preprocessing artifacts (fit in Lab 3)
+#   2) Load preprocessing artifacts (fit in Lab 4)
 #   3) Train a baseline Logistic Regression using class weights
 #   4) Evaluate on val/test and save metrics
 #   5) Save the trained model to /opt/ml/model/
@@ -174,7 +174,7 @@ def load_artifacts_bundle(art_dir: Path) -> dict:
     """
     path = art_dir / "preprocess.joblib"
     if not path.exists():
-        raise FileNotFoundError(f"Missing {path}. Run Lab 3 to generate preprocessing artifacts.")
+        raise FileNotFoundError(f"Missing {path}. Run Lab 4 to generate preprocessing artifacts.")
     return joblib.load(path)
 
 
@@ -355,6 +355,8 @@ def main():
     # 7) Save metrics and model
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    # also drop a copy next to the model artifact
+    (model_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
 
     # (Nice for later inference labs): ship the preprocessor in the same artifact
     to_save = {"model": model}
