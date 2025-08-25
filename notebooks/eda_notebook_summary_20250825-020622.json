@@ -1,0 +1,26 @@
+{
+  "rows": 7043,
+  "cols": 20,
+  "target": "Churn",
+  "target_counts": {
+    "No": 5174,
+    "Yes": 1869
+  },
+  "null_columns": {
+    "TotalCharges": 11
+  },
+  "top_numeric_corr": {
+    "MonthlyCharges": 0.193,
+    "SeniorCitizen": 0.151,
+    "TotalCharges": -0.199,
+    "tenure": -0.352
+  },
+  "top_categorical_mi": {
+    "Contract": 0.098,
+    "OnlineSecurity": 0.065,
+    "TechSupport": 0.063,
+    "InternetService": 0.056,
+    "OnlineBackup": 0.047
+  },
+  "generated_at": "2025-08-25T02:06:22Z"
+}

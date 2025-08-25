@@ -1,0 +1,18 @@
+target: Churn
+splits:
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  stratify: true
+numeric_imputer: median
+categorical_imputer: most_frequent
+encoder: onehot_ignore_unknown
+scale_numeric: true
+label_mapping:
+  'No': 0
+  'Yes': 1
+class_weight: balanced
+notes:
+  why_numeric_median: skew & outliers; median is robust
+  why_ignore_unknown: stability with new categories at inference
+  eda_artifact_hint: see $S3_ART_PREPROCESS/eda/ for report json
