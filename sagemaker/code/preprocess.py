@@ -1,3 +1,5 @@
+# Import statements at top
+
 import argparse
 import json
 import os
@@ -6,6 +8,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
@@ -213,7 +216,8 @@ def build_preprocessor(X: pd.DataFrame):
     )
 
     #    Categorical block: impute then one-hot encode.
-    #    - handle_unknown='ignore' keeps pipeline stable if new categories appear at inference time
+    #    - handle_unknown='ignore' keeps the pipeline stable if new categories
+    #    - appear at inference time
     #    - sparse_output=False yields a dense matrix (easier to save as CSV later)
     cat_pipe = Pipeline(
         steps=[
@@ -349,11 +353,7 @@ def persist_artifacts(
         "version": {
             "pandas": pd.__version__,
             "numpy": np.__version__,
-            "sklearn": (
-                __import__("sklearn").__version__
-                if "sklearn" in globals() or "sklearn" in locals()
-                else "unknown"
-            ),
+            "sklearn": sklearn.__version__,
         },
     }
 
